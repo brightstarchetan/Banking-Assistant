@@ -20,7 +20,7 @@ twilio_client = Client(
 )
 twilio_validator = RequestValidator(os.getenv('TWILIO_AUTH_TOKEN'))
 
-def validate_twilio_request(request: Request) -> bool:
+async def validate_twilio_request(request: Request) -> bool:
     """Validate that the request is coming from Twilio"""
     # Get the request URL and POST data
     url = str(request.url)
