@@ -1,0 +1,7 @@
+{
+  "name": "Banking Assistant",
+  "description": "A voice-powered banking assistant that uses ElevenLabs for speech-to-text/text-to-speech and Gemini for function calling to interact with a mock banking API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
