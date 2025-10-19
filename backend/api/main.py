@@ -5,7 +5,7 @@ from twilio.twiml.voice_response import VoiceResponse
 from twilio.request_validator import RequestValidator
 from twilio.rest import Client
 from dotenv import load_dotenv
-import requests
+import requests, time
 from io import BytesIO
 
 # --- Import Customer Data ---
@@ -37,6 +37,21 @@ curr_user_name = ""
 curr_user_id = ""
 curr_account_id = ""
 
+"""
+ audio_content = elevenlabs_service.text_to_speech(initial_greeting)
+    audio_file_path = "./audio/greeting.mp3"
+    with open(audio_file_path, "wb") as f:
+        f.write(audio_content)
+    
+    response.play(f"{PUBLIC_BASE_URL}/audio/greeting.mp3")
+"""
+def speak_string(text: str, response: VoiceResponse) :
+    audio_content = elevenlabs_service.text_to_speech(text)
+    audio_file_path = "./audio/recording.mp3"
+    with open(audio_file_path, "wb") as f:
+        f.write(audio_content)
+    
+    response.play(f"{PUBLIC_BASE_URL}/audio/recording.mp3")
 
 async def validate_twilio_request(request: Request) -> bool:
     """Validate that a request is genuinely from Twilio."""
@@ -61,8 +76,8 @@ async def handle_incoming_call(request: Request):
 
     response = VoiceResponse()
     # Greet the user and ask for their first name to start verification.
-    # initial_greeting = "Welcome to Capital One. I'm Nessie, your virtual banking assistant. To get started, may I have your first name?"
-    initial_greeting = "first name"
+    initial_greeting = "Welcome to Capital One. I'm Mr. Monopoly, your virtual banking assistant. To get started, may I have your first name?"
+    # initial_greeting = "first name"
     
     # We will generate the audio for the greeting to have a consistent voice
     audio_content = elevenlabs_service.text_to_speech(initial_greeting)
@@ -93,7 +108,7 @@ async def handle_name_recording(request: Request):
     response = VoiceResponse()
 
     if not recording_url:
-        response.say("I didn't hear a name. Please say your first name.")
+        speak_string("I didn't hear a name. Please say your first name.", response)
         response.record(action="/handle-name-recording", maxLength=10, playBeep=False, timeout=3)
         return Response(content=str(response), media_type="application/xml")
 
@@ -119,20 +134,21 @@ async def handle_name_recording(request: Request):
 
             if first_question:
                 print(f"Asking security question for {user_name}: {first_question}")
-                response.say(first_question)
+                speak_string(f"Hello {user_name}, I will now verify your identity with a security question.", response)
+                speak_string(first_question, response)
                 # Record their answer, passing the name in the action URL and starting at attempt 1
                 response.record(action=f"/handle-security-answer/{user_name}/1", maxLength=15, playBeep=False, timeout=4)
             else:
-                response.say("I found your account, but there are no security questions set up. Please contact support.")
+                speak_string("I found your account, but there are no security questions set up. Please contact support.", response)
                 response.hangup()
         else:
             print(f"Customer '{user_name}' not found.")
-            response.say("I'm sorry, I couldn't find a customer with that name. Goodbye.")
+            speak_string("I'm sorry, I couldn't find a customer with that name. Goodbye.", response)
             response.hangup()
 
     except Exception as e:
         print(f"Error handling name recording: {e}")
-        response.say("I encountered an error. Please call back later.")
+        speak_string("I encountered an error. Please call back later.", response)
         response.hangup()
 
     return Response(content=str(response), media_type="application/xml")
@@ -154,8 +170,8 @@ async def handle_security_answer(name: str, attempt: int, request: Request):
     first_question = list(security_questions.keys())[0]
 
     if not recording_url:
-        response.say("I didn't hear an answer. Please try again.")
-        response.say(first_question)
+        speak_string("I didn't hear an answer. Please try again.", response)
+        speak_string(first_question, response)
         response.record(action=f"/handle-security-answer/{name}/{attempt}", maxLength=15, playBeep=False, timeout=4)
         return Response(content=str(response), media_type="application/xml")
 
@@ -175,23 +191,24 @@ async def handle_security_answer(name: str, attempt: int, request: Request):
         if user_answer == correct_answer:
             # If verification is successful:
             verified_prompt = f"Thank you for verifying your identity, {name}. How can I help you today?"
-            response.say(verified_prompt)
+
+            speak_string(verified_prompt, response)
             # Now, direct to the main AI conversation handler
             response.record(action="/handle-recording", maxLength=30, playBeep=False, timeout=3)
         else:
             # If the answer is incorrect
             if attempt < MAX_SECURITY_ATTEMPTS:
                 next_attempt = attempt + 1
-                response.say("That is not correct. Let's try again.")
-                response.say(first_question)
+                speak_string("That is not correct. Let's try again.", response)
+                speak_string(first_question, response)
                 response.record(action=f"/handle-security-answer/{name}/{next_attempt}", maxLength=15, playBeep=False, timeout=4)
             else:
-                response.say("I'm sorry, I could not verify your identity. Please call back later. Goodbye.")
+                speak_string("I'm sorry, you have exceeded the maximum number of attempts.", response)
                 response.hangup()
 
     except Exception as e:
         print(f"Error handling security answer: {e}")
-        response.say("I encountered an error. Please call back later.")
+        speak_string("I apologize, but I encountered an error. Please try again later. Goodbye.", response)
         response.hangup()
 
     return Response(content=str(response), media_type="application/xml")
@@ -220,7 +237,7 @@ async def handle_recording(request: Request):
     # If the user was silent, prompt them to speak again.
     if not recording_url:
         response = VoiceResponse()
-        response.say("I didn't hear anything. Could you please repeat that?")
+        speak_string(("I didn't hear anything. Could you please repeat that?"), response)
         response.record(action="/handle-recording", maxLength=30, playBeep=False, timeout=3)
         return Response(content=str(response), media_type="application/xml")
 
@@ -240,7 +257,7 @@ async def handle_recording(request: Request):
         print(f"AI Response: '{ai_response_text}'")
         
         response = VoiceResponse()
-        
+
         # --- Conversation Flow Logic ---
         # 3. Check if the AI has decided the conversation is over
         if "[HANGUP]" in ai_response_text:
@@ -265,6 +282,10 @@ async def handle_recording(request: Request):
                 f.write(audio_content)
             
             response.play(f"{PUBLIC_BASE_URL}/audio/response.mp3")
+
+            # time.sleep(3)
+            speak_string("Is there anything else you would like assistance with?", response)
+            # time.sleep(1)
             
             response.record(
                 action="/handle-recording",
@@ -278,7 +299,7 @@ async def handle_recording(request: Request):
     except Exception as e:
         print(f"Error processing recording: {e}")
         response = VoiceResponse()
-        response.say("I apologize, but I encountered an error. Please try again later. Goodbye.")
+        speak_string("I apologize, but I encountered an error. Please try again later. Goodbye.", response)
         response.hangup()
         return Response(content=str(response), media_type="application/xml")
 

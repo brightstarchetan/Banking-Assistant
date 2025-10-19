@@ -38,8 +38,12 @@ class GeminiService:
             system_prompt = """
             System prompt: Please analyse the following recent transactions for the user and predict
             to their spending habits, categorizing expenses and identifying any unusual activity. 
-            Give them advice on managing their finances based on these transactions. Please respond in 4 sentences.
+            Please respond in 3 sentences.
             """
+
+            # Give them advice on managing their finances based on these transactions.
+            # Question 1: please analyze my recent trasnactions from the past month
+            # Question 2: do you have any budgeting tips for me (maybe some category).
             
             print("Message sent to Gemini")
             print(system_prompt + " User Input: " + user_input + f" (User: {curr_user_name}, UserID: {curr_user_id}, AccountID: {curr_account_id}), Recent Transactions: {transactions}")
