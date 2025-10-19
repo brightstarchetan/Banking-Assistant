@@ -19,7 +19,7 @@ class ElevenLabsService:
             raise ValueError("ElevenLabs API key is not configured.")
 
         files = {
-            'file': ('audio.wav', audio_file, 'audio/wav')
+            'file': ('audio.mp3', audio_file, 'audio/mp3')
         }
         
         headers = {

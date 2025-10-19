@@ -29,12 +29,23 @@ class GeminiService:
         # Send system instruction
         self.chat.send_message(SYSTEM_INSTRUCTION)
 
-    def run_conversation(self, user_input: str) -> str:
+    def run_conversation(self, user_input: str, curr_user_name: str, curr_user_id: str, curr_account_id: str) -> str:
         """Process user input and return the response"""
         try:
             # Send user message and get response
-            response = self.chat.send_message(user_input)
+            transactions = self.nessie_service.get_recent_transactions(curr_account_id, 10)
+            print(f"Recent Transactions for Account {curr_account_id}: {transactions}")
+            system_prompt = """
+            System prompt: Please analyse the following recent transactions for the user and predict
+            to their spending habits, categorizing expenses and identifying any unusual activity. 
+            Give them advice on managing their finances based on these transactions. Please respond in 4 sentences.
+            """
             
+            print("Message sent to Gemini")
+            print(system_prompt + " User Input: " + user_input + f" (User: {curr_user_name}, UserID: {curr_user_id}, AccountID: {curr_account_id}), Recent Transactions: {transactions}")
+            response = self.chat.send_message(system_prompt + " User Input: " + user_input + f" (User: {curr_user_name}, UserID: {curr_user_id}, AccountID: {curr_account_id}), Recent Transactions: {transactions}")
+            
+
             # Check if we need to call any banking functions
             # This is a simplified version - in practice, you'd need to implement
             # function calling based on the response content
@@ -42,25 +53,27 @@ class GeminiService:
             # For now, we'll use basic keyword matching
             response_text = response.text.lower()
             
-            if 'balance' in response_text:
-                # Extract account ID from response
-                # This is a simplified example - you'd need more robust parsing
-                account_id = self._extract_account_id(response_text)
-                if account_id:
-                    balance_info = self.nessie_service.get_account_balance(account_id)
-                    return self._format_balance_response(balance_info)
-                    
-            elif 'transfer' in response_text:
-                # Handle transfer logic
-                # This is a simplified example
-                from_account, to_account, amount = self._extract_transfer_details(response_text)
-                if all([from_account, to_account, amount]):
-                    transfer_result = self.nessie_service.transfer_funds(
-                        from_account, to_account, float(amount)
-                    )
-                    return self._format_transfer_response(transfer_result)
             
-            return response.text
+            
+            # if 'balance' in response_text:
+            #     # Extract account ID from response
+            #     # This is a simplified example - you'd need more robust parsing
+            #     account_id = self._extract_account_id(response_text)
+            #     if account_id:
+            #         balance_info = self.nessie_service.get_account_balance(account_id)
+            #         return self._format_balance_response(balance_info)
+                    
+            # elif 'transfer' in response_text:
+            #     # Handle transfer logic
+            #     # This is a simplified example
+            #     from_account, to_account, amount = self._extract_transfer_details(response_text)
+            #     if all([from_account, to_account, amount]):
+            #         transfer_result = self.nessie_service.transfer_funds(
+            #             from_account, to_account, float(amount)
+            #         )
+            #         return self._format_transfer_response(transfer_result)
+            
+            return response_text
 
         except Exception as e:
             print(f"Error in conversation: {str(e)}")

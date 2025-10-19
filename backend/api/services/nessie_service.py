@@ -59,13 +59,17 @@ class NessieBankService:
     def get_recent_transactions(self, account_id: str, count: int = 5) -> Dict[str, Any]:
         """Get recent transactions for an account"""
         print(f"[Nessie] Getting {count} recent transactions for account: {account_id}")
-        result = self._fetch_nessie(f"/accounts/{account_id}/purchases")
-
-        if result['success']:
-            all_purchases = result['data']
+        # result = requests.get(f"{self.base_url}/accounts/{account_id}/purchases?key={self.api_key}")
+        result = requests.get("http://api.nessieisreal.com/accounts/68f42d2a9683f20dd51a02cd/purchases?key=304c4f4ba37b99aca211e38cdbcc8b2a")
+        #result = self._fetch_nessie(f"/accounts/{account_id}/purchases")
+        result = result.json()
+        # print(f"Result: {result}")
+        if result:
+            print("Result is a success")
+            # all_purchases = result['data']
             transactions = []
             
-            for p in all_purchases[:count]:
+            for p in result:
                 transactions.append({
                     'id': p['_id'],
                     'date': p['purchase_date'],
@@ -76,6 +80,7 @@ class NessieBankService:
             
             return {'success': True, 'accountId': account_id, 'transactions': transactions}
         else:
+            print("Result is a failure")
             error_msg = 'Account not found.' if result.get('status') == 404 else result.get('error')
             return {'success': False, 'error': error_msg}
 
