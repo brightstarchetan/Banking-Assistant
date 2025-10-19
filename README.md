@@ -1,20 +1,75 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Nessie Bank Voice Assistant Backend
 
-# Run and deploy your AI Studio app
+This is the backend service for the Nessie Bank Voice Assistant, which handles phone calls through Twilio and processes banking requests using AI.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1OVDyb-XqczbJDDGnn1f7gHfpp8b-PWeo
+- Voice call handling with Twilio
+- Speech-to-text and text-to-speech conversion using ElevenLabs
+- Natural language processing using Google's Gemini AI
+- Banking operations through the Nessie API
+- FastAPI-based REST API
 
-## Run Locally
+## Setup
 
-**Prerequisites:**  Node.js
+1. Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+3. Set up environment variables in `.env`:
+```
+ELEVENLABS_API_KEY=your_key_here
+ELEVENLABS_VOICE_ID=your_voice_id_here
+GOOGLE_API_KEY=your_key_here
+NESSIE_API_KEY=your_key_here
+TWILIO_ACCOUNT_SID=your_sid_here
+TWILIO_AUTH_TOKEN=your_token_here
+```
+
+4. Run the server:
+```bash
+uvicorn api.main:app --reload
+```
+
+## API Endpoints
+
+- `POST /voice`: Handles incoming Twilio voice calls
+- `POST /handle-recording`: Processes voice recordings and returns responses
+- `GET /health`: Health check endpoint
+
+## Architecture
+
+The backend is organized into several services:
+
+- `elevenlabs_service.py`: Handles speech-to-text and text-to-speech conversion
+- `gemini_service.py`: Processes natural language using Google's Gemini AI
+- `nessie_service.py`: Interfaces with the Nessie banking API
+- `main.py`: FastAPI application with Twilio integration
+
+## Security
+
+- All API keys are stored in environment variables
+- Twilio request validation is implemented
+- Error handling and logging are in place
+
+## Development
+
+To run the development server with hot reload:
+```bash
+uvicorn api.main:app --reload --port 8000
+```
+
+## Testing
+
+To test the Twilio integration locally:
+1. Install ngrok: `npm install -g ngrok`
+2. Run ngrok: `ngrok http 8000`
+3. Update your Twilio phone number's voice webhook URL with the ngrok URL
+
